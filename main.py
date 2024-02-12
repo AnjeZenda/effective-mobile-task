@@ -80,7 +80,7 @@ def print_info() -> None:
     print('Enter 1 to view the phonebook entries')
     print('Enter 2 to add entries into the phonebook')
     print('Enter 3 to edit the phonebook entries')
-    print('Enter 4 to search enrties into the phonebook')
+    print('Enter 4 to search entries into the phonebook')
     print('Enter 5 to print command again')
     print('Enter 6 to exit')
 
