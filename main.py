@@ -1,6 +1,35 @@
 import os
-from pprint import pprint
+from typing import List
+
 FILE_NAME = 'phonebook.txt'
+
+class Entry:
+    def __init__(self, surname, name, office_phone, 
+                 personal_phone, organization, fathersname):
+        self.surname = surname
+        self.name = name
+        self.office_phone = office_phone
+        self.personal_phone = personal_phone
+        self.fathersname = fathersname
+        self.organization = organization
+    
+    def __str__(self) -> str:
+        return f'{self.surname} {self.name} {self.fathersname};\nOrganization: {self.organization};\nOffice phone: {self.office_phone};\nPersonal phone: {self.personal_phone};'
+
+    def __contains__(self, item):
+        return item in map(str.lower, self.__dict__.values())
+
+    def edit(self, surname, name, office_phone, 
+             personal_phone, organization, fathersname):
+        self.surname = surname
+        self.name = name
+        self.office_phone = office_phone
+        self.personal_phone = personal_phone
+        self.fathersname = fathersname
+        self.organization = organization
+    
+    def get_information(self):
+        return f'{self.surname}|{self.name}|{self.fathersname}|{self.organization}|{self.office_phone}|{self.personal_phone}\n'
 
 def print_info():
     print('Phone book')
@@ -12,63 +41,56 @@ def print_info():
     print('Enter 6 to exit')
 
 
-def load_data():
+def load_data() -> List[Entry]:
     phonebook = []
     if os.path.exists(FILE_NAME):
         with open(FILE_NAME, 'r') as file:
             for line in file:
                 entry = line.strip().split('|')
-                phonebook.append({
-                    'surname': entry[0],
-                    'name': entry[1],
-                    'fathername': entry[2],
-                    'organization': entry[3],
-                    'job phone': entry[4],
-                    'phone': entry[5]
-                })
+                phonebook.append(
+                    Entry(entry[0], entry[1], entry[4], entry[5], entry[3], entry[2])
+                )
     return phonebook
 
 
-def save_data(phonebook):
+def save_data(phonebook: List[Entry]):
     with open(FILE_NAME, 'w') as file:
         for entry in phonebook:
-            file.write('|'.join(entry.values()) + '\n')
+            file.write(entry.get_information())
 
-def display_entries(phonebook, page_size = 5):
+def display_entries(phonebook: List[Entry], page_size = 5):
     total_entries = len(phonebook)
     num_pages = (total_entries + page_size - 1) // page_size
 
     for page in range(num_pages):
+        print('')
         start = page * page_size
         end = min(start + page_size, total_entries)
         print(f'Page {page + 1}')
+        print('-'*15)
         for i in range(start, end):
-            pprint(phonebook[i])
+            print(phonebook[i])
+            print('-'*15)
+        print('')
         input('Press enter to continue...')
     
 
 
 
-def add_entry(phonebook):
+def add_entry(phonebook: List[Entry]):
     surname = input('Input surname: ')
     name = input('Input name: ')
-    fathername = input('Input fathername: ')
+    fathersname = input('Input fathername: ')
     organization = input('Input organization: ')
-    job_phone = input('Input job phone: ')
-    phone = input('Input phone: ')
-    phonebook.append({
-                    'surname': surname,
-                    'name': name,
-                    'fathername': fathername,
-                    'organization': organization,
-                    'job phone': job_phone,
-                    'phone': phone
-                })
+    office_phone = input('Input job phone: ')
+    personal_phone = input('Input phone: ')
+    phonebook.append(Entry(surname, name, office_phone, 
+                           personal_phone, organization, fathersname))
     save_data(phonebook)
     print('Entry was added')
     
 
-def edit_entry(phonebook):
+def edit_entry(phonebook: List[Entry]):
     print('Edit entries')
     display_entries(phonebook, len(phonebook))
     index = int(input("Enter the number of entry you\'d like to edit: ")) - 1
@@ -93,16 +115,16 @@ def edit_entry(phonebook):
                 return
             print('Enter information again')
 
-def search_entry(phonebook):
+def search_entry(phonebook: List[Entry]):
     keyword = input('Enter the key word for searching: ').lower()
     results = []
     for entry in phonebook:
-        if keyword in map(str.lower, entry.values()):
+        if keyword in entry:
             results.append(entry)
     if results:
         print('Result of searching:')
         for result in results:
-            pprint(result)
+            print(result)
     else:
         print('Nothing was found')
 
@@ -111,7 +133,7 @@ def main():
     print_info()
     while True:
         try:
-            choice = int(input('Enter the command.'))
+            choice = int(input('Enter the command: '))
         except:
             print('Incorrect command. Try again.')
             continue
