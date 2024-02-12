@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Set, Dict
 
 FILE_NAME: str = 'phonebook.txt'
@@ -37,7 +38,7 @@ class Entry:
     def __str__(self) -> str:
         '''Returns entry object string representation'''
         
-        return f'{self.surname}'  +\
+        return f'{self.surname} '  +\
             f'{self.name} {self.fathersname};\n'    +\
             f'Organization: {self.organization};\n' +\
             f'Office phone: {self.office_phone};\n' +\
@@ -63,6 +64,13 @@ class Entry:
         '''Returns a formatted string to save it to a file'''
         
         return f'{self.surname}|{self.name}|{self.fathersname}|{self.organization}|{self.office_phone}|{self.personal_phone}\n'
+
+
+def is_number_valid(number: str) -> bool:
+    '''Checks whether phone number is valid'''
+
+    pattern = re.compile('^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$')
+    return re.match(pattern, number)
 
 
 def print_info() -> None:
@@ -127,10 +135,14 @@ def add_entry(phonebook: List[Entry]) -> None:
     
     surname: str = input('Input surname: ')
     name: str = input('Input name: ')
-    fathersname: str = input('Input fathername: ')
+    fathersname: str = input('Input fathersname: ')
     organization: str = input('Input organization: ')
-    office_phone: str = input('Input job phone: ')
-    personal_phone: str = input('Input phone: ')
+    office_phone: str = input('Input office phone: ')
+    while not is_number_valid(office_phone):
+        office_phone = input('Input office phone again: ')
+    personal_phone: str = input('Input personal phone: ')
+    while not is_number_valid(personal_phone):
+        personal_phone = input('Input personal phone again: ')
     phonebook.append(Entry(surname, name, office_phone, 
                            personal_phone, organization, fathersname))
     save_data(phonebook)
@@ -142,12 +154,12 @@ def print_is_correct(entry: Entry, surname: str, name: str, fathersname: str,
     '''Prints a message to the console to make sure that the user has entered everything correctly'''
     
     print('-' * 15)
-    print(f'surname: {surname if surname != '' else entry.surname}')
-    print(f'name: {name if name != '' else entry.name}')
-    print(f'fathersname: {fathersname if fathersname != '' else entry.fathersname}')
-    print(f'organization: {organization if organization != '' else entry.organization}')
-    print(f'office phone: {office_phone if office_phone != '' else entry.office_phone}')
-    print(f'personal phone: {personal_phone if personal_phone != '' else entry.personal_phone}')
+    print(f'surname: {surname if surname != "" else entry.surname}')
+    print(f'name: {name if name != "" else entry.name}')
+    print(f'fathersname: {fathersname if fathersname != "" else entry.fathersname}')
+    print(f'organization: {organization if organization != "" else entry.organization}')
+    print(f'office phone: {office_phone if office_phone != "" else entry.office_phone}')
+    print(f'personal phone: {personal_phone if personal_phone != "" else entry.personal_phone}')
     print('-' * 15)
 
 
@@ -190,12 +202,12 @@ def search_entries(phonebook: List[Entry]) -> None:
                 'office_phone': set(),
                 'personal_phone': set()}
     for key in filters:
-        filter_by_key: Set[str] = set(input(f'Enter keywords separated by space for filter {key}: ').split())
+        filter_by_key: Set[str] = set(map(str.casefold ,input(f'Enter keywords separated by space for filter {key}: ').split()))
         filters[key] = filter_by_key | filters[key] 
     results: List[Entry] = phonebook.copy()
     for key, value in filters.items():
         if value and len(value) != 0:
-            results: List[Entry] = list(filter(lambda x: x.__dict__[key] in value, results))
+            results: List[Entry] = list(filter(lambda x: x.__dict__[key].casefold() in value, results))
     for result in results:
         print(result)
 
