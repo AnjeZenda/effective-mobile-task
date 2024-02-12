@@ -1,0 +1,180 @@
+import os
+from typing import List
+
+FILE_NAME = 'phonebook.txt'
+
+class Entry:
+    def __init__(self, surname, name, office_phone, 
+                 personal_phone, organization, fathersname):
+        self.surname = surname
+        self.name = name
+        self.office_phone = office_phone
+        self.personal_phone = personal_phone
+        self.fathersname = fathersname
+        self.organization = organization
+    
+    def __str__(self) -> str:
+        return f'{self.surname}'  +\
+            f'{self.name} {self.fathersname};\n'    +\
+            f'Organization: {self.organization};\n' +\
+            f'Office phone: {self.office_phone};\n' +\
+            f'Personal phone: {self.personal_phone};\n' + 15 * '-'
+
+    def __contains__(self, item):
+        return item in map(str.lower, self.__dict__.values())
+
+    def edit(self, surname, name, office_phone, 
+             personal_phone, organization, fathersname):
+        self.surname = surname if surname != '' else self.surname
+        self.name = name if name != '' else self.name
+        self.office_phone = office_phone if office_phone != '' else self.office_phone
+        self.personal_phone = personal_phone if personal_phone != '' else self.personal_phone
+        self.fathersname = fathersname if fathersname != '' else self.fathersname
+        self.organization = organization if organization != '' else self.organization
+    
+    def get_information(self):
+        return f'{self.surname}|{self.name}|{self.fathersname}|{self.organization}|{self.office_phone}|{self.personal_phone}\n'
+
+def print_info():
+    print('Phone book')
+    print('Enter 1 to view the phonebook entries')
+    print('Enter 2 to add entries into the phonebook')
+    print('Enter 3 to edit the phonebook entries')
+    print('Enter 4 to search enrties into the phonebook')
+    print('Enter 5 to print command again')
+    print('Enter 6 to exit')
+
+
+def load_data() -> List[Entry]:
+    phonebook = []
+    if os.path.exists(FILE_NAME):
+        with open(FILE_NAME, 'r', encoding='utf-8') as file:
+            for line in file:
+                entry = line.strip().split('|')
+                phonebook.append(
+                    Entry(entry[0], entry[1], entry[4], entry[5], entry[3], entry[2])
+                )
+    return phonebook
+
+
+def save_data(phonebook: List[Entry]):
+    with open(FILE_NAME, 'w', encoding='utf-8') as file:
+        for entry in phonebook:
+            file.write(entry.get_information())
+
+def display_entries(phonebook: List[Entry], page_size = 5):
+    total_entries = len(phonebook)
+    num_pages = (total_entries + page_size - 1) // page_size
+    isStop = False
+    for page in range(num_pages):
+        if isStop:
+            break
+        print('')
+        start = page * page_size
+        end = min(start + page_size, total_entries)
+        print(f'Page {page + 1}')
+
+        for i in range(start, end):
+            print(f'Entry number: {i + 1}')
+            print(phonebook[i])
+
+        print('')
+        isStop = input('Press enter to continue...(s/S to stop)')
+        isStop = isStop == 'S' or isStop == 's'
+    
+
+def add_entry(phonebook: List[Entry]):
+    surname = input('Input surname: ')
+    name = input('Input name: ')
+    fathersname = input('Input fathername: ')
+    organization = input('Input organization: ')
+    office_phone = input('Input job phone: ')
+    personal_phone = input('Input phone: ')
+    phonebook.append(Entry(surname, name, office_phone, 
+                           personal_phone, organization, fathersname))
+    save_data(phonebook)
+    print('Entry was added')
+
+def check(entry: Entry, surname, name, fathersname,
+          organization, office_phone, personal_phone) -> None:
+    print('-' * 15)
+    print(f'surname: {surname if surname != '' else entry.surname}')
+    print(f'name: {name if name != '' else entry.name}')
+    print(f'fathersname: {fathersname if fathersname != '' else entry.fathersname}')
+    print(f'organization: {organization if organization != '' else entry.organization}')
+    print(f'office phone: {office_phone if office_phone != '' else entry.office_phone}')
+    print(f'personal phone: {personal_phone if personal_phone != '' else entry.personal_phone}')
+    print('-' * 15)
+
+def edit_entry(phonebook: List[Entry]):
+    print('Edit entries')
+    display_entries(phonebook, len(phonebook))
+    index = int(input('Enter the number of entry you\'d like to edit: ')) - 1
+    if 0 <= index < len(phonebook):
+        print('If you would like not to change field leave it empty')
+        while True:
+            surname = input('Input surname: ')
+            name = input('Input name: ')
+            fathersname = input('Input fathersname: ')
+            organization = input('Input organization: ')
+            office_phone = input('Input job phone: ')
+            personal_phone = input('Input phone: ')
+
+            check(phonebook[index], surname, name, fathersname,
+                  organization, office_phone, personal_phone)
+            
+            is_correct = input('Is all correct?(Y|д|N|н)')
+            if is_correct in 'YyДд':
+                phonebook[index].edit(surname, name, 
+                                      office_phone, personal_phone,
+                                        organization, fathersname)
+                print('Entry was edited')
+                return
+            print('Enter information again')
+
+def search_entry(phonebook: List[Entry]):
+    filters = {'surname': None, 
+                'name': None, 
+                'fathersname': None,
+                'organization': None,
+                'office_phone': None,
+                'personal_phone': None}
+    for key in filters:
+        filter_by_key = set(input(f'Enter keywords separated by space for filter {key}: ').split())
+        filters[key] = filter_by_key
+    results = phonebook.copy()
+    for key, value in filters.items():
+        if value and len(value) != 0:
+            results = list(filter(lambda x: x.__dict__[key] in value, results))
+    for result in results:
+        print(result)
+
+def main():
+    phonebook = load_data()
+    print_info()
+    while True:
+        try:
+            choice = int(input('Enter the command: '))
+        except:
+            print('Incorrect command. Try again.')
+            continue
+        match choice:
+            case 1:
+                display_entries(phonebook)
+            case 2:
+                add_entry(phonebook)
+            case 3:
+                edit_entry(phonebook)
+            case 4:
+                search_entry(phonebook)
+            case 5:
+                print_info()
+            case 6:
+                save_data(phonebook)
+                print('Goodbye')
+                break
+    
+        
+
+if __name__ == '__main__':
+    main()
