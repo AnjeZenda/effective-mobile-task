@@ -14,19 +14,23 @@ class Entry:
         self.organization = organization
     
     def __str__(self) -> str:
-        return f'{self.surname} {self.name} {self.fathersname};\nOrganization: {self.organization};\nOffice phone: {self.office_phone};\nPersonal phone: {self.personal_phone};'
+        return f'{self.surname}'  +\
+            f'{self.name} {self.fathersname};\n'    +\
+            f'Organization: {self.organization};\n' +\
+            f'Office phone: {self.office_phone};\n' +\
+            f'Personal phone: {self.personal_phone};\n' + 15 * '-'
 
     def __contains__(self, item):
         return item in map(str.lower, self.__dict__.values())
 
     def edit(self, surname, name, office_phone, 
              personal_phone, organization, fathersname):
-        self.surname = surname
-        self.name = name
-        self.office_phone = office_phone
-        self.personal_phone = personal_phone
-        self.fathersname = fathersname
-        self.organization = organization
+        self.surname = surname if surname != '' else self.surname
+        self.name = name if name != '' else self.name
+        self.office_phone = office_phone if office_phone != '' else self.office_phone
+        self.personal_phone = personal_phone if personal_phone != '' else self.personal_phone
+        self.fathersname = fathersname if fathersname != '' else self.fathersname
+        self.organization = organization if organization != '' else self.organization
     
     def get_information(self):
         return f'{self.surname}|{self.name}|{self.fathersname}|{self.organization}|{self.office_phone}|{self.personal_phone}\n'
@@ -44,7 +48,7 @@ def print_info():
 def load_data() -> List[Entry]:
     phonebook = []
     if os.path.exists(FILE_NAME):
-        with open(FILE_NAME, 'r') as file:
+        with open(FILE_NAME, 'r', encoding='utf-8') as file:
             for line in file:
                 entry = line.strip().split('|')
                 phonebook.append(
@@ -54,28 +58,30 @@ def load_data() -> List[Entry]:
 
 
 def save_data(phonebook: List[Entry]):
-    with open(FILE_NAME, 'w') as file:
+    with open(FILE_NAME, 'w', encoding='utf-8') as file:
         for entry in phonebook:
             file.write(entry.get_information())
 
 def display_entries(phonebook: List[Entry], page_size = 5):
     total_entries = len(phonebook)
     num_pages = (total_entries + page_size - 1) // page_size
-
+    isStop = False
     for page in range(num_pages):
+        if isStop:
+            break
         print('')
         start = page * page_size
         end = min(start + page_size, total_entries)
         print(f'Page {page + 1}')
-        print('-'*15)
+
         for i in range(start, end):
+            print(f'Entry number: {i + 1}')
             print(phonebook[i])
-            print('-'*15)
+
         print('')
-        input('Press enter to continue...')
+        isStop = input('Press enter to continue...(s/S to stop)')
+        isStop = isStop == 'S' or isStop == 's'
     
-
-
 
 def add_entry(phonebook: List[Entry]):
     surname = input('Input surname: ')
@@ -88,45 +94,60 @@ def add_entry(phonebook: List[Entry]):
                            personal_phone, organization, fathersname))
     save_data(phonebook)
     print('Entry was added')
-    
+
+def check(entry: Entry, surname, name, fathersname,
+          organization, office_phone, personal_phone) -> None:
+    print('-' * 15)
+    print(f'surname: {surname if surname != '' else entry.surname}')
+    print(f'name: {name if name != '' else entry.name}')
+    print(f'fathersname: {fathersname if fathersname != '' else entry.fathersname}')
+    print(f'organization: {organization if organization != '' else entry.organization}')
+    print(f'office phone: {office_phone if office_phone != '' else entry.office_phone}')
+    print(f'personal phone: {personal_phone if personal_phone != '' else entry.personal_phone}')
+    print('-' * 15)
 
 def edit_entry(phonebook: List[Entry]):
     print('Edit entries')
     display_entries(phonebook, len(phonebook))
-    index = int(input("Enter the number of entry you\'d like to edit: ")) - 1
+    index = int(input('Enter the number of entry you\'d like to edit: ')) - 1
     if 0 <= index < len(phonebook):
+        print('If you would like not to change field leave it empty')
         while True:
             surname = input('Input surname: ')
             name = input('Input name: ')
-            fathername = input('Input fathername: ')
+            fathersname = input('Input fathersname: ')
             organization = input('Input organization: ')
-            job_phone = input('Input job phone: ')
-            phone = input('Input phone: ')
-            print(f'{surname} {name} {fathername} {organization} {job_phone} {phone}')
-            is_correct = input('Is all correct?(Y|N)')
+            office_phone = input('Input job phone: ')
+            personal_phone = input('Input phone: ')
+
+            check(phonebook[index], surname, name, fathersname,
+                  organization, office_phone, personal_phone)
+            
+            is_correct = input('Is all correct?(Y|д|N|н)')
             if is_correct in 'YyДд':
-                phonebook[index]['surname'] = surname
-                phonebook[index]['name'] = name
-                phonebook[index]['fathername'] = fathername
-                phonebook[index]['organization'] = organization
-                phonebook[index]['phone'] = phone
-                phonebook[index]['job phone'] = job_phone
+                phonebook[index].edit(surname, name, 
+                                      office_phone, personal_phone,
+                                        organization, fathersname)
                 print('Entry was edited')
                 return
             print('Enter information again')
 
 def search_entry(phonebook: List[Entry]):
-    keyword = input('Enter the key word for searching: ').lower()
-    results = []
-    for entry in phonebook:
-        if keyword in entry:
-            results.append(entry)
-    if results:
-        print('Result of searching:')
-        for result in results:
-            print(result)
-    else:
-        print('Nothing was found')
+    filters = {'surname': None, 
+                'name': None, 
+                'fathersname': None,
+                'organization': None,
+                'office_phone': None,
+                'personal_phone': None}
+    for key in filters:
+        filter_by_key = set(input(f'Enter keywords separated by space for filter {key}: ').split())
+        filters[key] = filter_by_key
+    results = phonebook.copy()
+    for key, value in filters.items():
+        if value and len(value) != 0:
+            results = list(filter(lambda x: x.__dict__[key] in value, results))
+    for result in results:
+        print(result)
 
 def main():
     phonebook = load_data()
