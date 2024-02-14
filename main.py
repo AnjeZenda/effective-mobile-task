@@ -53,12 +53,12 @@ class Entry:
              personal_phone: str, organization: str, fathersname: str) -> str:
         '''Edits the information about the Entity object'''
         
-        self.surname = surname if surname != '' else self.surname
-        self.name = name if name != '' else self.name
-        self.office_phone = office_phone if office_phone != '' else self.office_phone
-        self.personal_phone = personal_phone if personal_phone != '' else self.personal_phone
-        self.fathersname = fathersname if fathersname != '' else self.fathersname
-        self.organization = organization if organization != '' else self.organization
+        self.surname = surname if surname != "" else self.surname
+        self.name = name if name != "" else self.name
+        self.office_phone = office_phone if office_phone != "" else self.office_phone
+        self.personal_phone = personal_phone if personal_phone != "" else self.personal_phone
+        self.fathersname = fathersname if fathersname != "" else self.fathersname
+        self.organization = organization if organization != "" else self.organization
     
     def get_information(self) -> str:
         '''Returns a formatted string to save it to a file'''
@@ -69,7 +69,7 @@ class Entry:
 def is_number_valid(number: str) -> bool:
     '''Checks whether phone number is valid'''
 
-    pattern = re.compile('^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$')
+    pattern = re.compile("^[\\+]?[(]?[0-9]{3}[)]?[-\\s\\.]?[0-9]{3}[-\\s\\.]?[0-9]{4,6}$")
     return re.match(pattern, number)
 
 
@@ -85,12 +85,12 @@ def print_info() -> None:
     print('Enter 6 to exit')
 
 
-def load_data() -> List[Entry]:
+def load_data(file_name: str) -> List[Entry]:
     '''Loads data from the file'''
 
     phonebook: List[Entry] = []
-    if os.path.exists(FILE_NAME):
-        with open(FILE_NAME, 'r', encoding='utf-8') as file:
+    if os.path.exists(file_name):
+        with open(file_name, 'r', encoding='utf-8') as file:
             for line in file:
                 entry:List[str] = line.strip().split('|')
                 phonebook.append(
@@ -99,10 +99,10 @@ def load_data() -> List[Entry]:
     return phonebook
 
 
-def save_data(phonebook: List[Entry]) -> None:
+def save_data(file_name: str, phonebook: List[Entry]) -> None:
     '''Saves data into the file'''
     
-    with open(FILE_NAME, 'w', encoding='utf-8') as file:
+    with open(file_name, 'w', encoding='utf-8') as file:
         for entry in phonebook:
             file.write(entry.get_information())
 
@@ -120,6 +120,7 @@ def display_entries(phonebook: List[Entry], page_size: int = 5) -> None:
         start: int = page * page_size
         end: int = min(start + page_size, total_entries)
         print(f'Page {page + 1}')
+        print('-' * 15)
 
         for i in range(start, end):
             print(f'Entry number: {i + 1}')
@@ -145,8 +146,6 @@ def add_entry(phonebook: List[Entry]) -> None:
         personal_phone = input('Input personal phone again: ')
     phonebook.append(Entry(surname, name, office_phone, 
                            personal_phone, organization, fathersname))
-    save_data(phonebook)
-    print('Entry was added')
 
 
 def print_is_correct(entry: Entry, surname: str, name: str, fathersname: str,
@@ -163,8 +162,11 @@ def print_is_correct(entry: Entry, surname: str, name: str, fathersname: str,
     print('-' * 15)
 
 
-def edit_entry(phonebook: List[Entry]) -> None:
-    '''Edits an Entry object by user\'s request'''
+def edit_entry(phonebook: List[Entry]) -> bool:
+    '''
+    Edits an Entry object by user\'s request.
+    Returns True if there\'s such Entry else False
+    '''
     
     print('Edit entries')
     display_entries(phonebook, len(phonebook))
@@ -188,9 +190,11 @@ def edit_entry(phonebook: List[Entry]) -> None:
                                       office_phone, personal_phone,
                                         organization, fathersname)
                 print('Entry was edited')
-                return
+                return True
             print('Enter information again')
-
+    else:
+        print('You\'ve entered incorrected value')
+        return False
 
 def search_entries(phonebook: List[Entry]) -> None:
     '''Searches Entry objects filtered by user\'s requests'''
@@ -208,6 +212,7 @@ def search_entries(phonebook: List[Entry]) -> None:
     for key, value in filters.items():
         if value and len(value) != 0:
             results: List[Entry] = list(filter(lambda x: x.__dict__[key].casefold() in value, results))
+    print('\nHere what was found:\n' + 15 * '-')
     for result in results:
         print(result)
 
@@ -215,7 +220,12 @@ def search_entries(phonebook: List[Entry]) -> None:
 def main() -> None:
     '''Main function. Start of the program.'''
     
-    phonebook: List[Entry] = load_data()
+    file_name = input('Input the name of the file you\'d like to use as phone book, or leave it empty to use standard(phonebook.txt)')
+    if file_name == '':
+        file_name = FILE_NAME
+    if file_name[-4:] != '.txt':
+        file_name += '.txt'
+    phonebook: List[Entry] = load_data(file_name)
     print_info()
     while True:
         try:
@@ -225,19 +235,30 @@ def main() -> None:
             continue
         match choice:
             case 1:
-                display_entries(phonebook)
+                try:
+                    page_size = int(input(
+                        'Input the size of the page, amount of entries you would like to see on 1 page: '))
+                except:
+                    print('Incorrect page size.')
+                    continue
+                display_entries(phonebook, page_size)
             case 2:
                 add_entry(phonebook)
+                save_data(file_name, phonebook)
+                print('Entry was added')
             case 3:
-                edit_entry(phonebook)
+                if edit_entry(phonebook):
+                    save_data(file_name, phonebook)
             case 4:
                 search_entries(phonebook)
             case 5:
                 print_info()
             case 6:
-                save_data(phonebook)
+                save_data(file_name, phonebook)
                 print('Goodbye')
                 break
+            case _:
+                print('No such command')
 
 
 if __name__ == '__main__':
